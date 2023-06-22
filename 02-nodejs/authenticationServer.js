@@ -30,8 +30,92 @@
  */
 
 const express = require("express")
+const bodyParser = require('body-parser');
 const PORT = 3000;
 const app = express();
+
 // write your logic here, DONT WRITE app.listen(3000) when you're running tests, the tests will automatically start the server
+app.use(bodyParser.json());
+app.post('/signup', signup);
+app.post('/login', login);
+app.get('/data', giveData);
+
+
+
+let credentials = [];
+let id = 0;
+function signup(req, res) {
+  const username = req.body.username;
+  const password = req.body.password;
+  const firstName = req.body.firstName;
+  const lastName = req.body.lastName;
+  const email = req.body.email;
+  let alreadyExist = false;
+  for (let i = 0; i < credentials.length; i++) {
+    if (credentials[i].username === username) {
+      alreadyExist = true;
+      break;
+    }
+  }
+  if (!alreadyExist) {
+    const credential = {
+      id: ++id,
+      username: username,
+      password: password,
+      firstName: firstName,
+      lastName: lastName,
+      email: email
+    }
+    credentials.push(credential);
+    res.status(201).send('Signup successful');
+  } else {
+    res.status(400).send();
+  }
+}
+
+function login(req, res) {
+  const username = req.body.username;
+  const password = req.body.password;
+  let isValidUser = false;
+  let index = -1;
+  for (let i = 0; i < credentials.length; i++) {
+    if (username === credentials[i].username
+      && password === credentials[i].password) {
+      isValidUser = true;
+      index = i;
+      break;
+    }
+  }
+  if (isValidUser) {
+    const respBody = {
+      id: credentials[index].id,
+      firstName: credentials[index].firstName,
+      lastName: credentials[index].lastName,
+      email: credentials[index].email
+    };
+    res.status(200).send(respBody);
+  } else {
+    res.status(401).send();
+  }
+}
+
+
+function giveData(req, res) {
+  const email = req.headers['email'];
+  const password = req.headers['password'];
+  let isValidUser = false;
+  for (let i = 0; i < credentials.length; i++) {
+    if (credentials[i].email === email 
+      && credentials[i].password === password) {
+      isValidUser = true;
+      break;
+    }
+  }
+  if (isValidUser) {
+    res.status(200).send({ users: credentials });
+  } else {
+    res.status(401).send('Unauthorized');
+  }
+}
 
 module.exports = app;
