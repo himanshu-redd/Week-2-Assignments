@@ -9,31 +9,26 @@
   1.GET /todos - Retrieve all todo items
     Description: Returns a list of all todo items.
     Response: 200 OK with an array of todo items in JSON format.
-    Example: GET http://localhost:3000/todos
     
   2.GET /todos/:id - Retrieve a specific todo item by ID
     Description: Returns a specific todo item identified by its ID.
     Response: 200 OK with the todo item in JSON format if found, or 404 Not Found if not found.
-    Example: GET http://localhost:3000/todos/123
     
   3. POST /todos - Create a new todo item
     Description: Creates a new todo item.
     Request Body: JSON object representing the todo item.
     Response: 201 Created with the ID of the created todo item in JSON format. eg: {id: 1}
-    Example: POST http://localhost:3000/todos
     Request Body: { "title": "Buy groceries", "completed": false, description: "I should buy groceries" }
     
   4. PUT /todos/:id - Update an existing todo item by ID
     Description: Updates an existing todo item identified by its ID.
     Request Body: JSON object representing the updated todo item.
     Response: 200 OK if the todo item was found and updated, or 404 Not Found if not found.
-    Example: PUT http://localhost:3000/todos/123
     Request Body: { "title": "Buy groceries", "completed": true }
     
   5. DELETE /todos/:id - Delete a todo item by ID
     Description: Deletes a todo item identified by its ID.
     Response: 200 OK if the todo item was found and deleted, or 404 Not Found if not found.
-    Example: DELETE http://localhost:3000/todos/123
 
     - For any other route not defined in the server return 404
 
@@ -41,9 +36,95 @@
  */
 const express = require('express');
 const bodyParser = require('body-parser');
-
 const app = express();
 
 app.use(bodyParser.json());
+
+app.get('/todos', getTodoList);
+app.get('/todos/:id', getOneTodoItem);
+app.post('/todos', saveTodoItem);
+app.put('/todos/:id', updateTodoItem);
+app.delete('/todos/:id', deleteTodoItem);
+
+let id = 0;
+let todoList = [];
+
+function getTodoList(req, res) {
+  res.status(200).send(todoList);
+}
+
+
+function getOneTodoItem(req, res) {
+  let paramId = req.params.id;
+  let index = -1;
+  for (let i = 0; i < todoList.length; i++) {
+    if (paramId == todoList[i].id) {
+      index = i;
+      break;
+    }
+  }
+  if (index !== -1) {
+    res.status(200).send(todoList[index]);
+  } else {
+    res.status(404).send();
+  }
+}
+
+
+function saveTodoItem(req, res) {
+  const title = req.body.title;
+  const completed = req.body.completed;
+  const description = req.body.description;
+  const todoObjet = {
+    id: ++id,
+    title: title,
+    completed: completed,
+    description: description
+  };
+  let respObject = { id: id };
+  todoList.push(todoObjet);
+  res.status(201).send(respObject);
+}
+
+
+function updateTodoItem(req, res) {
+  const paramId = req.params.id;
+  const completed = req.body.completed;
+  const title = req.body.title;
+  let updated = false;
+  for (let i = 0; i < todoList.length; i++) {
+    if (todoList[i].id == paramId) {
+      todoList[i].completed = completed;
+      todoList[i].title = title;
+      updated = true;
+    }
+  }
+  if (updated) {
+    res.status(200).send();
+  } else {
+    res.status(404).send();
+  }
+}
+
+
+function deleteTodoItem(req, res) {
+  const paramId = req.params.id;
+  let deleted = false;
+  for (let i = 0; i < todoList.length; i++) {
+    if (todoList[i].id == paramId) {
+      for (let j = i + 1; j < todoList.length; j++) {
+        todoList[j - 1] = todoList[j];
+      }
+      todoList.pop();
+      deleted = true;
+      break;
+    }
+  }
+  if (deleted) {
+    res.status(200).send();
+  } else {
+    res.status(404).send();
+  }
+}
 
 module.exports = app;
